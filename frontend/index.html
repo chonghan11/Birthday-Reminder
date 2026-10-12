@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Birthday Buddy</title>
+  <meta name="description" content="Never forget a birthday again. Get an email before the big day.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎂%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="logo">🎂 Birthday Buddy</p>
+      <h1>Never miss a birthday again.</h1>
+      <p class="tagline">Add the birthdays you care about. We'll email you before the big day.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <form id="email-form" class="card email-card">
+      <label for="email">Your email</label>
+      <div class="row">
+        <input id="email" type="email" required autocomplete="email" placeholder="you@example.com">
+        <button type="submit" class="btn">Show my birthdays</button>
+      </div>
+      <p class="hint">Reminders are sent to this address.</p>
+    </form>
+
+    <div class="layout">
+      <form id="add-form" class="card">
+        <h2>Add a birthday</h2>
+
+        <label for="name">Name</label>
+        <input id="name" required maxlength="80" placeholder="Mum, Alex, ...">
+
+        <div class="grid">
+          <div>
+            <label for="month">Month</label>
+            <select id="month" required></select>
+          </div>
+          <div>
+            <label for="day">Day</label>
+            <select id="day" required></select>
+          </div>
+        </div>
+
+        <label for="year">Birth year <span class="optional">(optional, shows their age)</span></label>
+        <input id="year" type="number" min="1900" max="2100" placeholder="1995">
+
+        <fieldset>
+          <legend>Remind me</legend>
+          <label class="chip"><input type="checkbox" name="lead" value="0" checked><span>On the day</span></label>
+          <label class="chip"><input type="checkbox" name="lead" value="1"><span>1 day before</span></label>
+          <label class="chip"><input type="checkbox" name="lead" value="3"><span>3 days before</span></label>
+          <label class="chip"><input type="checkbox" name="lead" value="7" checked><span>1 week before</span></label>
+          <label class="chip"><input type="checkbox" name="lead" value="14"><span>2 weeks before</span></label>
+        </fieldset>
+
+        <label for="note">Note <span class="optional">(optional, included in the email)</span></label>
+        <input id="note" maxlength="200" placeholder="Loves chocolate cake">
+
+        <button type="submit" class="btn btn-block">Save birthday</button>
+        <p id="tz-note" class="hint"></p>
+      </form>
+
+      <section aria-labelledby="list-title">
+        <h2 id="list-title" class="visually-hidden">Your birthdays</h2>
+        <div id="next-up"></div>
+        <ul id="list" class="list"></ul>
+        <div id="empty" class="card empty">
+          <p class="empty-icon">🎈</p>
+          <p id="empty-text"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="gift-dialog" aria-labelledby="gift-title">
+    <div class="dialog-head">
+      <h2 id="gift-title">Gift ideas</h2>
+      <button id="gift-close" type="button" class="remove" aria-label="Close">✕</button>
+    </div>
+    <div class="gift-controls">
+      <select id="gift-category" aria-label="Category">
+        <option value="all">✨ All ideas</option>
+        <option value="cakes">🎂 Cakes</option>
+        <option value="flowers">💐 Flowers</option>
+        <option value="treats">🍬 Treats</option>
+        <option value="experiences">🎟️ Experiences</option>
+      </select>
+      <input id="gift-search" type="search" maxlength="50" placeholder="Search, e.g. chocolate, roses" aria-label="Search gift ideas">
+    </div>
+    <p id="gift-status" class="hint" aria-live="polite"></p>
+    <ul id="gift-results" class="gift-grid"></ul>
+    <p class="hint">Our suggestions. The links open a search for shops that deliver near you.</p>
+  </dialog>
+
+  <footer class="wrap">Built to be deployed on AWS</footer>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
