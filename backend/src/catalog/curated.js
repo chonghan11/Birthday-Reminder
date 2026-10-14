@@ -37,13 +37,27 @@ const ITEMS = IDEAS.map(([id, category, emoji, name, blurb, term]) => ({
   id, category, emoji, name, blurb, nearbyLink: maps(term), onlineLink: web(term),
 }));
 
+// When nothing in the list matches, offer a search for exactly what the user typed,
+// so they are never left at a dead end.
+const customIdea = (query) => ({
+  id: 'custom',
+  category: 'custom',
+  custom: true,
+  emoji: '🔍',
+  name: `Search for "${query}"`,
+  blurb: 'Not in our list, but you can look for it nearby or online.',
+  nearbyLink: maps(query),
+  onlineLink: web(query),
+});
+
 function createCuratedCatalog() {
   return {
     // category "all" searches everything; query matches the name, blurb or category.
     async search({ category, query }) {
       const needle = query.toLowerCase();
-      return ITEMS.filter((item) => (category === 'all' || item.category === category)
+      const matches = ITEMS.filter((item) => (category === 'all' || item.category === category)
         && `${item.name} ${item.blurb} ${item.category}`.toLowerCase().includes(needle));
+      return matches.length === 0 && query ? [customIdea(query)] : matches;
     },
   };
 }

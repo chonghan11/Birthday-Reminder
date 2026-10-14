@@ -78,7 +78,9 @@
     try {
       const items = await api(`/api/gifts?${params}`);
       if (request !== giftRequest) return;
-      status.textContent = items.length ? '' : 'Nothing found. Try another search.';
+      status.textContent = items.length === 1 && items[0].custom
+        ? 'Not in our list yet. Search for it instead:'
+        : items.length ? '' : 'Nothing found. Try another search.';
       $('gift-results').replaceChildren(...items.map((item) => {
         const li = el('li', 'gift-card');
         const links = el('div', 'gift-links');

@@ -111,6 +111,7 @@ I set up the AWS CLI, CDK and Git, a login that uses no long-lived keys, and a s
 - **Who is billed.** The project account is a member of my AWS Organization, so its usage is billed to the original (management) account, and I check it under Billing there.
 - **What costs money here.** DynamoDB on-demand is cents. Lambda, API Gateway and EventBridge have free allowances far above this project's use. Cognito is free for my scale. SES costs about US$0.10 per 1,000 emails.
 - **What I am avoiding on purpose.** RDS (billed per hour), a NAT gateway (billed per hour, about SGD$45 a month, needed when Lambda runs inside a private network), and a custom domain (Route 53 plus a yearly registration fee). CloudFront already gives a free HTTPS address.
+- **API type: HTTP API, not REST API.** API Gateway offers both. The HTTP API costs less per request (AWS's published prices put it at roughly a third of the REST API's, so check the exact figure for `ap-southeast-1`) and is simpler to set up. The REST API's extra features aren't needed for this app, so I chose the cheaper one.
 - **Free tier.** The rules depend on when the account was created, so I check Billing, then Free Tier, for my account instead of trusting a table.
 - **Safety net.** A monthly budget alarm in the billing account. [fill in: done or not]
 - **Clean-up.** `cdk destroy` removes everything the stack created. The table is set to be deleted with the stack.
