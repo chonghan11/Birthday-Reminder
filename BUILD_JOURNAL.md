@@ -95,7 +95,7 @@ I set up the AWS CLI, CDK and Git, a login that uses no long-lived keys, and a s
 
 ## 5. Deploying and checking it works
 
-**What I did.** Ran `cdk synth` (compile only), `cdk diff` (preview: one table, nothing deleted), then `cdk deploy`. It created the stack in about 30 seconds. [fill in: date]
+**What I did.** Ran `cdk synth` (compile only), `cdk diff` (preview: one table, nothing deleted), then `cdk deploy`. It created the stack in about 30 seconds, on 9 October 2026.
 
 **How I verified it**
 1. Ran the app locally against the real table, with `STORAGE_BACKEND=dynamodb`, `TABLE_NAME` set to the deployed table, and my AWS profile active.
@@ -113,7 +113,7 @@ I set up the AWS CLI, CDK and Git, a login that uses no long-lived keys, and a s
 - **What I am avoiding on purpose.** RDS (billed per hour), a NAT gateway (billed per hour, about SGD$45 a month, needed when Lambda runs inside a private network), and a custom domain (Route 53 plus a yearly registration fee). CloudFront already gives a free HTTPS address.
 - **API type: HTTP API, not REST API.** API Gateway offers both. The HTTP API costs less per request (AWS's published prices put it at roughly a third of the REST API's, so check the exact figure for `ap-southeast-1`) and is simpler to set up. The REST API's extra features aren't needed for this app, so I chose the cheaper one.
 - **Free tier.** The rules depend on when the account was created, so I check Billing, then Free Tier, for my account instead of trusting a table.
-- **Safety net.** A monthly budget alarm in the billing account. [fill in: done or not]
+- **Safety net.** A monthly budget alarm in the billing account. 
 - **Clean-up.** `cdk destroy` removes everything the stack created. The table is set to be deleted with the stack.
 
 
