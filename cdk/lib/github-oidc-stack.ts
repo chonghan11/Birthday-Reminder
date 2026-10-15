@@ -2,7 +2,8 @@ import * as cdk from 'aws-cdk-lib/core';
 import { Construct } from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
-const GITHUB_REPO = 'chonghan11/Birthday-Reminder';
+// How GitHub names this repo inside its identity tokens: owner@ownerId/repo@repoId.
+const GITHUB_REPO = 'chonghan11@170323129/Birthday-Reminder@1415655746';
 const GITHUB_HOST = 'token.actions.githubusercontent.com';
 
 

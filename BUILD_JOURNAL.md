@@ -196,6 +196,8 @@ I added these rules to `service.js`, which is shared by the local server and the
 - **No stored keys.** GitHub proves its identity to AWS with a short-lived token (OpenID Connect), and AWS hands back temporary credentials.
 - **A role built in CDK** (`GithubOidcStack`). It trusts only my repository and only its `main` branch, with no wildcards, and can do just one thing: use the CDK deploy roles in this account. I deploy this stack by hand once. The pipeline deploys only the app stack, so it can never change its own permissions.
 
+![CI/CD run: check and deploy both green](screenshots/pipeline-run.png)
+*First pipeline run, 15 October 2026. The first attempt failed at the AWS login because the trust rule had the wrong repository name format. After I corrected the rule, the second attempt passed: check in 22 seconds, deploy in 1 minute 37 seconds.*
 
 **Problems and decisions**
 
