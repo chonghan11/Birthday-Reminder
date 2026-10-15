@@ -3,7 +3,7 @@ const path = require('node:path');
 const service = require('./service');
 
 // Local-only HTTP layer: it serves the frontend and the /api routes on one port
-// so you can try the app on your machine. In AWS the frontend and API are separate.
+// TO run it locally. In AWS the frontend and API are separate.
 function createApp({ storage, catalog }) {
   const app = express();
   app.disable('x-powered-by');

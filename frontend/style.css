@@ -102,6 +102,7 @@ legend { font-size: 0.9rem; font-weight: 600; padding: 0; margin-bottom: 6px; }
   user-select: none;
 }
 .chip input:checked + span { background: var(--soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.chip input:disabled + span { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
 
 .btn {
   padding: 10px 18px;

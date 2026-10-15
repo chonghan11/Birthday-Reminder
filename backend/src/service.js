@@ -6,15 +6,20 @@ const { randomUUID } = require('node:crypto');
 const LEAD_DAYS = [0, 1, 3, 7, 14]; // how many days before the birthday we may email
 const MAX_PER_EMAIL = 100;
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 // "1005" for 5 October: a string key that sorts and looks up cleanly.
 const monthDayKey = (month, day) => `${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
 
 const GIFT_CATEGORIES = ['all', 'cakes', 'flowers', 'treats', 'experiences'];
 
+// A name is made of letters, emoji, spaces, hyphens, apostrophes and dots(numbers are rejected)
+const EMOJI = '(?:\\p{Regional_Indicator}{2}|(?:\\p{Emoji_Presentation}|\\p{Extended_Pictographic}\\ufe0f)\\p{Emoji_Modifier}?'
+  + '(?:\\u200d(?:\\p{Emoji_Presentation}|\\p{Extended_Pictographic})\\ufe0f?\\p{Emoji_Modifier}?)*)';
+const NAME_PATTERN = new RegExp(`^(?:[\\p{L}\\p{M}]|${EMOJI})(?:[\\p{L}\\p{M} .'’-]|${EMOJI})*$`, 'u');
+
 class ValidationError extends Error {} // -> 400
 
-// --- Birthdays (saved under the email they are reminded at) --------------------------
 
 function checkEmail(email) {
   const value = typeof email === 'string' ? email.trim().toLowerCase() : '';
@@ -41,9 +46,27 @@ function cleanText(value, max, field, required) {
   return text;
 }
 
+// How many days from today (in the birthday person's time zone) until this birthday next happens.
+// Today counts as 0. Feb 29 birthdays fall on Feb 28 in years that are not leap years.
+function daysUntilBirthday(month, day, timeZone, now) {
+  const today = localTime(now, timeZone);
+  const todayMs = Date.UTC(today.year, today.month - 1, today.day);
+  for (let year = today.year; ; year++) {
+    const d = month === 2 && day === 29 && !isLeap(year) ? 28 : day;
+    const days = Math.round((Date.UTC(year, month - 1, d) - todayMs) / 86400000);
+    if (days >= 0) return days;
+  }
+}
+
+// Names are compared without caring about capital letters or extra spaces.
+const sameName = (a, b) => a.trim().replace(/\s+/g, ' ').toLowerCase() === b.trim().replace(/\s+/g, ' ').toLowerCase();
+
 async function createBirthday(storage, input = {}, now = new Date()) {
   const email = checkEmail(input.email);
   const name = cleanText(input.name, 80, 'name', true);
+  if (!NAME_PATTERN.test(name)) {
+    throw new ValidationError('Name can only have letters, emoji, spaces, hyphens, apostrophes and dots (no numbers or symbols).');
+  }
   const note = cleanText(input.note ?? '', 200, 'note', false);
 
   const { month, day } = input;
@@ -60,8 +83,25 @@ async function createBirthday(storage, input = {}, now = new Date()) {
     throw new ValidationError(`remindDaysBefore must be a non-empty list of: ${LEAD_DAYS.join(', ')}`);
   }
 
-  if ((await storage.listByEmail(email)).length >= MAX_PER_EMAIL) {
+  // A reminder can't be longer than the time left: with 5 days to go, "1 week before" is rejected.
+  const timezone = checkTimezone(input.timezone);
+  const daysAway = daysUntilBirthday(month, day, timezone, now);
+  const tooEarly = [...new Set(lead)].filter((n) => n > daysAway).sort((a, b) => b - a);
+  if (tooEarly.length > 0) {
+    const when = daysAway === 0 ? 'today' : `in ${daysAway} day${daysAway === 1 ? '' : 's'}`;
+    throw new ValidationError(
+      `This birthday is ${when}, so a reminder ${tooEarly.map((n) => `${n} day${n === 1 ? '' : 's'}`).join(' or ')} before is too early. Choose a closer reminder.`,
+    );
+  }
+
+  const existing = await storage.listByEmail(email);
+  if (existing.length >= MAX_PER_EMAIL) {
     throw new ValidationError(`limit of ${MAX_PER_EMAIL} birthdays per email reached`);
+  }
+
+  // No duplicates: the same person (name) on the same day would send double reminders.
+  if (existing.some((b) => b.month === month && b.day === day && sameName(b.name, name))) {
+    throw new ValidationError(`You already saved ${name} on ${day} ${MONTH_NAMES[month - 1]}.`);
   }
 
   const birthday = {
@@ -74,7 +114,7 @@ async function createBirthday(storage, input = {}, now = new Date()) {
     year,
     note,
     remindDaysBefore: [...new Set(lead)].sort((a, b) => b - a),
-    timezone: checkTimezone(input.timezone),
+    timezone,
     createdAt: now.toISOString(),
     sent: [], // keys like "2026:3" = reminder 3 days before the 2026 birthday already emailed
   };
@@ -98,7 +138,7 @@ function toPublic({ sent, monthDay, ...birthday }) {
   return birthday;
 }
 
-// --- Gift ideas (from the `catalog`) ---------------------------------------------------
+// Gift ideas (from the `catalog`)
 
 async function searchGifts(catalog, { category = 'all', q = '' } = {}) {
   if (!GIFT_CATEGORIES.includes(category)) throw new ValidationError(`category must be one of: ${GIFT_CATEGORIES.join(', ')}`);
@@ -107,7 +147,7 @@ async function searchGifts(catalog, { category = 'all', q = '' } = {}) {
   return catalog.search({ category, query });
 }
 
-// --- The hourly job: email whoever is due --------------------------------------------
+//  The hourly job: email whoever is due 
 
 // Calendar date (and hour) it currently is in a timezone.
 function localTime(now, timeZone) {
@@ -125,9 +165,8 @@ function addDays({ year, month, day }, n) {
 
 const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
-// Which birthdays could be due right now? Anyone's local date is within a day of the UTC date,
-// and a reminder looks up to 14 days ahead, so only these few month-days matter. This lets the
-// job query a handful of month-days instead of scanning every birthday in the database.
+// Check if birthdays are due and a reminder looks up to 14 days ahead, so only these few month-days matter. 
+// This allows the job query a handful of month-days instead of scanning every birthday in the database.
 function candidateMonthDays(now) {
   const utcToday = { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1, day: now.getUTCDate() };
   const keys = new Set();
@@ -143,7 +182,7 @@ function candidateMonthDays(now) {
   return [...keys];
 }
 
-// Does the birthday fall on this date? Feb 29 birthdays are celebrated on Feb 28 in non-leap years.
+// Leap year logic. Feb 29 birthdays are celebrated on Feb 28 in non-leap years.
 function isBirthdayOn(birthday, date) {
   const day = birthday.month === 2 && birthday.day === 29 && !isLeap(date.year) ? 28 : birthday.day;
   return date.month === birthday.month && date.day === day;
@@ -164,10 +203,9 @@ function buildEmail(birthday, lead, date) {
   };
 }
 
-// Run this on a schedule (hourly is fine). It is safe to run often: each reminder is
-// remembered in `birthday.sent`, so it is emailed once per year. A reminder goes out once the
+// Run this on a schedule. each reminder is remembered in `birthday.sent`, so it is emailed once per year. A reminder goes out once the
 // birthday person's local time reaches `sendFromHour`. Returns how many emails were sent.
-async function processDueReminders({ storage, mailer, now = new Date(), sendFromHour = 8 }) {
+async function processDueReminders({ storage, mailer, now = new Date(), sendFromHour = 7 }) {
   let sentCount = 0;
   const candidates = [];
   for (const monthDay of candidateMonthDays(now)) candidates.push(...(await storage.listByMonthDay(monthDay)));

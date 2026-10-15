@@ -136,3 +136,95 @@ I set up the AWS CLI, CDK and Git, a login that uses no long-lived keys, and a s
 - A cheap, managed service often beats a "more powerful" one for a small app (DynamoDB over RDS, Cognito over my own login).
 - Keep infrastructure and application code separate, and keep the cloud-specific parts behind small interfaces.
 - Check which account, region and tool I am actually in before assuming something is broken.
+
+---
+
+## 10. Update, 14 October 2026: the API and the reminder job are live in AWS
+
+**What I did.** Added two Lambda functions to the CDK stack and deployed them.
+- **API Lambda** behind an HTTP API, with four routes: `GET` and `POST /api/birthdays`, `DELETE /api/birthdays/{id}`, and `GET /api/gifts`. The handler turns each request into a call to `service.js`, the same functions the local server uses.
+- **Reminder Lambda** started every hour by an EventBridge rule. It runs the same `processDueReminders` job as the local timer, with the `console` mailer for now, so the "email" appears in the function's logs until SES is set up.
+- Each function has its own role. The only permission the Lambdas have is read and write on the one table and its indexes (plus writing logs), so the setup follows least privilege.
+
+**How I checked it.** I called the live API with every route: gift search, a bad category (400), a missing email (400), a save (201), the list, a delete with the wrong email (404) and with the right one (204). I then removed my test entry so the table stayed clean. For the reminder job I ran the function by hand and read its log (`sent: 0`, no errors), and confirmed the rule is enabled and points at the function.
+
+**What went wrong and how I fixed it**
+
+| Problem | Cause | Fix |
+|---|---|---|
+| `Multiple constructor implementations are not allowed` | I merged two stack classes and kept both constructors | One class, one constructor, with everything inside it |
+| Only some requests worked | The API accepted `GET /api/birthdays` but not `POST` | Added `POST` to that route's methods |
+| `There is already a Construct with name 'GET--api--birthdays'` | I added the same route twice | Deleted the duplicate block |
+| `--app is required` | I ran `cdk` from the project root, but `cdk.json` lives in the `cdk` folder | Run CDK commands from `cdk/` and app commands from the root |
+| `Function not found` when invoking the reminder Lambda | I used the name from my CDK code, but AWS adds a prefix and a random ending | Listed the real names with `aws lambda list-functions` |
+| `Schedule.rate(60)` and `MAILER_BACKEND:,` failed to compile | `rate` takes a duration, not a number, and the value was missing | `cdk.Duration.hours(1)` and `'console'` |
+| Running locally gave `internal error` | `TABLE_NAME` was empty, so DynamoDB rejected the empty table name | Set the variable in the same terminal window |
+
+**Why the app starts in memory mode by default.** With `STORAGE_BACKEND` not set, the app uses in-memory storage. That lets anyone run the repo with no AWS account, and nothing real can be changed by accident. The Lambdas set `STORAGE_BACKEND=dynamodb` in their own environment, so the cloud version never relies on the default.
+
+**Why `lambda.Function` with the `backend` folder and not `NodejsFunction`.** The folder contains the handlers and `src/`, so the handlers' `require('../src/...')` lines still resolve, and the AWS SDK is already part of the Node runtime. It is the simplest setup that works. A bundler would give a smaller package and is an option later.
+
+---
+
+## 11. Update, 14 October 2026: rules added to the app, and how I tested them
+
+I added these rules to `service.js`, which is shared by the local server and the Lambda, and repeated the quick ones in the page for an instant message. The server is the real safeguard, because anyone can call the API directly.
+
+| Rule | What it does | Why |
+|---|---|---|
+| **Reminder length** | A reminder can't be longer than the time left. With 5 days to go, "1 week before" is rejected, and the page greys those options out and unticks them | Such a reminder would never be sent, so it is misleading |
+| **No duplicates** | The same name on the same day under the same email is rejected (ignoring capitals and extra spaces) | Two entries would send two emails for one birthday |
+| **Names** | Letters (any language), emoji, spaces, hyphens, apostrophes and dots. No numbers or other symbols | Keeps names clean and emails readable. Real names like O'Brien and Mary-Ann still work |
+| **Gift search fallback** | If nothing in my list matches, the page shows "Search for ..." with Google Maps and web search links built from what was typed | The user never hits a dead end |
+| **Send window** | Reminders go out from 7am in the user's time zone. The default was 8am | Nothing is sent between midnight and 7am |
+
+| **Testing** | The rules were tested with many dates, time zones, names and edge cases (leap days, midnight, year ends), through the Lambda handler, in the browser, and against the real table with a test entry that was deleted afterwards. All the checks passed.
+
+**Things I learned while testing**
+- A date stored as the text `"0305"` keeps its leading zero, and as a number it becomes `305`, which can be read two ways. That is why `monthDay` is text, and why the index key had to match.
+- A DynamoDB index read is only *eventually* consistent, so two saves a few milliseconds apart could both pass the duplicate check. The page disables the button while saving, which covers normal use. A fully strict version would need a conditional write.
+- Time zone: the page reads the browser's time zone and saves it with each entry. It is the time zone of the person *receiving* the reminder, because the email goes to the address I enter. It is a guess, so a VPN or travel can throw it off. After Cognito, I plan to ask for it at sign-up and add a settings page to change it.
+
+---
+
+## 12. Update, 14 October 2026: CI/CD with GitHub Actions
+
+**Goal.** Stop deploying by hand. A push to `main` should check the code and deploy it.
+
+**What I built**
+- **`.github/workflows/deploy.yml`** with two jobs on GitHub's Ubuntu runners (a fresh virtual machine for each job, thrown away afterwards). `check` runs on every push and pull request: install the packages from the lockfile and run `cdk synth`. `deploy` runs only for a push to `main` after `check` passes: log in to AWS, `cdk diff`, then `cdk deploy`.
+- **No stored keys.** GitHub proves its identity to AWS with a short-lived token (OpenID Connect), and AWS hands back temporary credentials.
+- **A role built in CDK** (`GithubOidcStack`). It trusts only my repository and only its `main` branch, with no wildcards, and can do just one thing: use the CDK deploy roles in this account. I deploy this stack by hand once. The pipeline deploys only the app stack, so it can never change its own permissions.
+
+
+**Problems and decisions**
+
+| Problem or decision | What I found | What I did |
+|---|---|---|
+| The pipeline would not have the Lambda handlers | `backend/lambda/` was in `.gitignore`, so a clean checkout would not contain them, and the Lambdas would deploy without their code | Removed that line so the handlers are committed |
+| Approval prompt | CI cannot answer `y/n`, so `--require-approval never` is needed | Acceptable because only `main` deploys and the role is tightly limited. Branch protection on `main` is the safety gate |
+
+
+**Testing.** I copied exactly what Git would commit into a clean folder and ran the check job's steps there: packages installed from the lockfile and both stacks built. I also read the generated trust policy and confirmed it from AWS after deploying the role.
+
+---
+
+## 13. Updated: what is next (14 October 2026)
+
+Done since section 8: the API Lambda, the reminder Lambda and EventBridge schedule, and the CI/CD files with their AWS role. Still to do:
+
+1. **SES.** Verify a sender address now (new accounts are in a sandbox that can only email verified addresses), write `mailer/ses.js`, allow the reminder function to send, and switch `MAILER_BACKEND` from `console` to `ses`. Until then the hourly job only prints, and it still marks reminders as sent.
+2. **S3 and CloudFront** for the website, with the API address in `config.js` and CORS added to the API.
+3. **Cognito login**, with the table keys changing to `userId` and `id`, and a time zone setting after sign-up.
+4. **Abuse protection and monitoring.** The API is open until Cognito and throttling are in, so the address stays private. Add CloudWatch alarms, and give the Lambda log groups a short retention (CDK created them with 731 days).
+5. **Small fixes.** The local timer in `server.js` can crash the whole server if the reminder job throws, so it needs a `try/catch`. Add real tests or a linter to the pipeline.
+
+---
+
+## 14. More lessons
+
+- A default should be the safe option (memory storage), and anything real should be set explicitly in the environment.
+- The name of a thing in my code (a CDK id) is not its real name in AWS. Ask AWS for the real name.
+- Environment variables belong to one terminal window. Most "it worked yesterday" problems were that, or an expired login.
+- Test with an independent calculation and with the edge cases (midnight, leap days, time zones), not just the cases I expect.
+- Check what a pipeline step actually protects against before keeping or dropping it. I tested that `cdk synth` catches TypeScript errors and misses JavaScript ones.

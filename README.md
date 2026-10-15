@@ -14,11 +14,13 @@ A static website where you save the birthdays you care about and get an email be
 - [x] Web app and API logic, running locally
 - [x] DynamoDB table with two indexes, deployed with CDK
 - [x] App connected to the real table and verified (data survives a restart)
-- [ ] API Gateway and Lambda for the API
+- [x] API Gateway and Lambda for the API
 - [ ] S3 and CloudFront to host the website
-- [ ] Hourly reminder job (EventBridge) and email sending (SES)
+- [x] Hourly reminder job (EventBridge and Lambda), implemented
+- [ ] Real email sending with SES (reminders are currently printed to the function's logs)
 - [ ] Login with Cognito, so each person only sees their own birthdays
-- [ ] Monitoring, alarms and CI/CD
+- [x] Monitoring and CI/CD
+- [ ] Alarms
 
 ## Run locally
 
@@ -40,7 +42,7 @@ backend/src/
   mailer/            mailer interface: console.js prints emails locally; SES is planned
   catalog/           gift catalog interface: curated.js is a hand-picked list of gift ideas
   app.js, server.js  LOCAL ONLY: Express + a timer that stands in for a cloud scheduler
-cdk/                 AWS CDK (TypeScript): the DynamoDB table and, next, the Lambda and API
+cdk/                 AWS CDK (TypeScript): the DynamoDB table, the API and reminder Lambdas, the hourly schedule and the GitHub deploy role
 ```
 
 The key idea: `service.js` knows nothing about HTTP or AWS. It receives a `storage` and a `mailer`. In AWS, Lambda handlers call the same functions.
@@ -58,13 +60,13 @@ A **birthday** has: `id`, `email` (where reminders go), `name`, `month`, `day`, 
 
 **Gift ideas:** when a birthday is within 14 days, it gets a "Gift ideas" button that opens a dropdown and search bar. The ideas are a hand-picked list in `backend/src/catalog/curated.js`, so no outside API or key is needed. Each idea has two links that open in the user's own browser: Google Maps for nearby shops, and a web search. A real shop API would be another file in `backend/src/catalog/`.
 
-There is no authentication, so anyone who knows an email address can see and change the list saved under it. That is acceptable while I build, but not for real use; login with Cognito is planned.
+There is no authentication, so anyone who knows an email address can see and change the list saved under it. That is acceptable for the current state; login with Cognito is planned.
 
 The scheduled job is `processDueReminders({ storage, mailer, sendFromHour })`. Run it hourly: each reminder is remembered so it is emailed once per year, and it goes out once the birthday person's local time reaches `sendFromHour`. It never reads the whole table: it works out which few month-days could be due and asks storage for just those (`listByMonthDay`), so it stays cheap as the number of birthdays grows.
 
 ## Build journal
 
-How this project was built, step by step: what I did, what went wrong and how I fixed it, why I chose each AWS service, cost considerations, troubleshooting methods, and what is next. See [docs/BUILD_JOURNAL.md](docs/BUILD_JOURNAL.md).
+How this project was built, step by step: what I did, what went wrong and how I fixed it, why I chose each AWS service, cost considerations, troubleshooting methods, and what is next. See [BUILD_JOURNAL.md](BUILD_JOURNAL.md).
 
 ## Testing and troubleshooting
 

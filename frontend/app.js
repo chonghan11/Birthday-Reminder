@@ -6,6 +6,12 @@
   const LEAD_LABELS = { 0: 'on the day', 1: '1 day', 3: '3 days', 7: '1 week', 14: '2 weeks' };
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
+  // Same rule as the server (backend/src/service.js): letters, emoji, spaces, hyphens, apostrophes
+  // and dots, starting with a letter or emoji. No numbers or other symbols.
+  const EMOJI = '(?:\\p{Regional_Indicator}{2}|(?:\\p{Emoji_Presentation}|\\p{Extended_Pictographic}\\ufe0f)\\p{Emoji_Modifier}?'
+    + '(?:\\u200d(?:\\p{Emoji_Presentation}|\\p{Extended_Pictographic})\\ufe0f?\\p{Emoji_Modifier}?)*)';
+  const NAME_PATTERN = new RegExp(`^(?:[\\p{L}\\p{M}]|${EMOJI})(?:[\\p{L}\\p{M} .'’-]|${EMOJI})*$`, 'u');
+
   const $ = (id) => document.getElementById(id);
   const emailInput = $('email');
   const addForm = $('add-form');
@@ -15,7 +21,7 @@
   let currentEmail = '';
   let birthdays = [];
 
-  // --- API ---------------------------------------------------------------------------
+
 
   async function api(path, options) {
     const res = await fetch(API_BASE + path, {
@@ -33,7 +39,7 @@
     render();
   }
 
-  // --- Dates -------------------------------------------------------------------------
+  //  Dates 
 
   const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
@@ -48,7 +54,7 @@
 
   const countdown = (days) => (days === 0 ? 'Today! 🎉' : days === 1 ? 'Tomorrow' : `in ${days} days`);
 
-  // --- Gift ideas (our API looks them up from an outside API) -----------------------
+  // Gift ideas 
 
   const GIFT_SOON_DAYS = 14; // show the gift button when the birthday is this close
   const giftDialog = $('gift-dialog');
@@ -71,7 +77,7 @@
   }
 
   async function searchGifts() {
-    const request = ++giftRequest; // ignore answers that arrive after a newer search
+    const request = ++giftRequest; 
     const params = new URLSearchParams({ category: $('gift-category').value, q: $('gift-search').value.trim() });
     const status = $('gift-status');
     status.textContent = 'Searching…';
@@ -111,7 +117,7 @@
     return button;
   }
 
-  // --- Rendering ---------------------------------------------------------------------
+  //  Rendering 
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -120,7 +126,7 @@
     return node;
   }
 
-  // Avatar colour comes from the name, kept in the blue-to-violet range to match the theme.
+  // Avatar colour comes from the name, kept in the blue-to-violet range 
   function avatar(name) {
     let hash = 0;
     for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) % 360;
@@ -189,7 +195,7 @@
     toastTimer = setTimeout(() => { node.className = ''; }, 3500);
   }
 
-  // --- Actions -----------------------------------------------------------------------
+  //  Actions 
 
   async function removeBirthday(b) {
     if (!confirm(`Remove ${b.name}'s birthday?`)) return;
@@ -221,6 +227,37 @@
       return;
     }
     const year = $('year').value.trim();
+    const name = $('name').value;
+    const month = Number(monthSelect.value);
+    const day = Number(daySelect.value);
+    const leads = [...addForm.querySelectorAll('input[name=lead]:checked')].map((i) => Number(i.value));
+
+    // Check before saving, so the user gets an instant answer. The server checks again.
+    if (!NAME_PATTERN.test(name.trim())) {
+      toast('Name can only have letters, emoji, spaces, hyphens, apostrophes and dots (no numbers or symbols).', true);
+      return;
+    }
+    if (leads.length === 0) {
+      toast('Choose at least one reminder.', true);
+      return;
+    }
+    // 1. No duplicates: the same name on the same day would send double reminders.
+    const tidy = (s) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+    if (birthdays.some((b) => b.month === month && b.day === day && tidy(b.name) === tidy(name))) {
+      toast(`You already saved ${name.trim()} on ${day} ${MONTHS[month - 1]}.`, true);
+      return;
+    }
+    // 2. A reminder can't be longer than the time left: 5 days to go and "1 week before" is rejected.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysAway = nextOccurrence({ month, day }, today).days;
+    const tooEarly = leads.filter((n) => n > daysAway);
+    if (tooEarly.length > 0) {
+      const when = daysAway === 0 ? 'today' : `in ${daysAway} day${daysAway === 1 ? '' : 's'}`;
+      toast(`This birthday is ${when}, so untick: ${tooEarly.map((n) => `${LEAD_LABELS[n]} before`).join(', ')}.`, true);
+      return;
+    }
+
     const button = addForm.querySelector('button[type=submit]');
     button.disabled = true;
     try {
@@ -228,11 +265,11 @@
         method: 'POST',
         body: JSON.stringify({
           email: currentEmail,
-          name: $('name').value,
-          month: Number(monthSelect.value),
-          day: Number(daySelect.value),
+          name,
+          month,
+          day,
           year: year ? Number(year) : null,
-          remindDaysBefore: [...addForm.querySelectorAll('input[name=lead]:checked')].map((i) => Number(i.value)),
+          remindDaysBefore: leads,
           note: $('note').value,
           timezone,
         }),
@@ -249,7 +286,7 @@
     }
   });
 
-  // --- Setup -------------------------------------------------------------------------
+  //  Setup 
 
   function fillDays() {
     const selected = Number(daySelect.value) || 1;
@@ -258,9 +295,30 @@
     daySelect.value = Math.min(selected, count);
   }
 
+  // Reminders longer than the time left can't be chosen: untick them and grey them out.
+  function updateReminderOptions() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysAway = nextOccurrence({ month: Number(monthSelect.value), day: Number(daySelect.value) }, today).days;
+    let blocked = false;
+    addForm.querySelectorAll('input[name=lead]').forEach((input) => {
+      const tooLong = Number(input.value) > daysAway;
+      input.disabled = tooLong;
+      if (tooLong) {
+        input.checked = false;
+        blocked = true;
+      }
+    });
+    $('lead-note').textContent = !blocked ? ''
+      : daysAway === 0 ? "This birthday is today, so only 'On the day' is available."
+        : `Only ${daysAway} day${daysAway === 1 ? '' : 's'} left, so longer reminders aren't available.`;
+  }
+
   monthSelect.replaceChildren(...MONTHS.map((m, i) => new Option(m, i + 1)));
-  monthSelect.addEventListener('change', fillDays);
+  monthSelect.addEventListener('change', () => { fillDays(); updateReminderOptions(); });
+  daySelect.addEventListener('change', updateReminderOptions);
   fillDays();
+  updateReminderOptions();
   $('tz-note').textContent = `Emails arrive in the morning, ${timezone} time.`;
 
   try { currentEmail = localStorage.getItem(EMAIL_KEY) || ''; } catch { /* storage may be blocked */ }

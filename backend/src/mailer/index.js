@@ -1,6 +1,5 @@
 const config = require('../config');
 
-// Register new mailers here, then select one with MAILER_BACKEND.
 const backends = {
   console: () => require('./console'),
 };

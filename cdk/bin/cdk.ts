@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib/core';
 import { CdkStack } from '../lib/cdk-stack';
+import { GithubOidcStack } from '../lib/github-oidc-stack';
 
 const app = new cdk.App();
+
+// Deployed once by hand (see lib/github-oidc-stack.ts). The pipeline deploys only CdkStack.
+new GithubOidcStack(app, 'GithubOidcStack');
+
 new CdkStack(app, 'CdkStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
