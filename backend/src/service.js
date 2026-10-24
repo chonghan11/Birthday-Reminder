@@ -127,6 +127,17 @@ async function listBirthdays(storage, email) {
   return items.map(toPublic).sort((a, b) => a.month - b.month || a.day - b.day);
 }
 
+// Moves every birthday saved under this email to one time zone. Only the time zone changes: the reminders
+// already sent stay recorded, so nothing is emailed twice.
+async function setTimezone(storage, email, timezone) {
+  const owner = checkEmail(email);
+  if (!timezone) throw new ValidationError('timezone is required');
+  const zone = checkTimezone(timezone);
+  const items = await storage.listByEmail(owner);
+  await Promise.all(items.map((b) => storage.setTimezone(b.id, zone)));
+  return { updated: items.length, timezone: zone };
+}
+
 // Only the matching email can delete. Returns true if something was deleted.
 async function deleteBirthday(storage, id, email) {
   const birthday = await storage.get(id);
@@ -233,5 +244,5 @@ async function processDueReminders({ storage, mailer, now = new Date(), sendFrom
 
 module.exports = {
   ValidationError, LEAD_DAYS, GIFT_CATEGORIES,
-  createBirthday, listBirthdays, deleteBirthday, searchGifts, processDueReminders,
+  createBirthday, listBirthdays, deleteBirthday, setTimezone, searchGifts, processDueReminders,
 };

@@ -29,6 +29,15 @@ function readBody(event) {
   }
 }
 
+// Once the API sits behind the Cognito authorizer, the signed-in person's email comes from their
+// verified login token, so nobody can read or change another email's list by typing it into a request.
+// Without an authorizer (local or before login is added) it falls back to the email in the request.
+function callerEmail(event, requested) {
+  const auth = event.requestContext.authorizer;
+  const email = auth && auth.jwt && auth.jwt.claims && auth.jwt.claims.email;
+  return email ? String(email).toLowerCase() : requested;
+}
+
 exports.handler = async (event) => {
   // An HTTP API event keeps the method inside requestContext.http, and the path in rawPath.
   const method = event.requestContext.http.method;
@@ -38,16 +47,22 @@ exports.handler = async (event) => {
 
   try {
     if (method === 'POST' && path === '/api/birthdays') {
-      return reply(201, await service.createBirthday(storage, readBody(event)));
+      const body = readBody(event);
+      return reply(201, await service.createBirthday(storage, { ...body, email: callerEmail(event, body.email) }));
     }
 
     if (method === 'GET' && path === '/api/birthdays') {
-      return reply(200, await service.listBirthdays(storage, query.email));
+      return reply(200, await service.listBirthdays(storage, callerEmail(event, query.email)));
     }
 
     if (method === 'DELETE' && id) {
-      const removed = await service.deleteBirthday(storage, id, query.email);
+      const removed = await service.deleteBirthday(storage, id, callerEmail(event, query.email));
       return removed ? reply(204) : reply(404, { error: 'not found' });
+    }
+
+    if (method === 'PUT' && path === '/api/timezone') {
+      const body = readBody(event);
+      return reply(200, await service.setTimezone(storage, callerEmail(event, body.email), body.timezone));
     }
 
     if (method === 'GET' && path === '/api/gifts') {

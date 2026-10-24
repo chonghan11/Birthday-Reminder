@@ -70,6 +70,50 @@ main { margin-top: -44px; }
 
 label { display: block; margin: 14px 0 6px; font-size: 0.9rem; font-weight: 600; }
 .email-card label { margin-top: 0; }
+.auth-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.auth-card p { margin: 0; overflow-wrap: anywhere; }
+.auth-card .hint { margin-top: 4px; }
+
+/* Log in / create account: one big card in the middle of the page */
+.auth-screen { max-width: 460px; margin: 28px auto 40px; padding: 32px; }
+.auth-screen h2 { margin: 18px 0 4px; font-size: 1.6rem; }
+.auth-sub { margin: 0 0 8px; color: var(--muted); }
+.auth-tabs { display: flex; gap: 4px; padding: 4px; background: var(--soft); border-radius: 12px; }
+.auth-tab {
+  flex: 1;
+  padding: 9px 12px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.auth-tab[aria-selected="true"] { color: var(--accent); background: var(--surface); box-shadow: 0 1px 4px rgba(30, 64, 175, 0.15); }
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 64px; }
+.eye-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: flex;
+  padding: 6px;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.eye-btn:hover { color: var(--accent); }
+.link { padding: 0; font: inherit; color: var(--accent); background: none; border: 0; cursor: pointer; }
+.link:hover { text-decoration: underline; }
+.auth-links { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 0.9rem; }
+.auth-error, .auth-info { margin: 12px 0 0; padding: 10px 12px; font-size: 0.9rem; border-radius: 10px; }
+.auth-error { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.auth-info { color: var(--accent); background: var(--soft); }
+@media (max-width: 520px) { .auth-screen { padding: 22px; } }
 .optional { font-weight: 400; color: var(--muted); }
 
 input, select {
@@ -117,6 +161,21 @@ legend { font-size: 0.9rem; font-weight: 600; padding: 0; margin-bottom: 6px; }
 .btn:hover { filter: brightness(1.08); }
 .btn:disabled { opacity: 0.6; cursor: wait; }
 .btn-block { width: 100%; margin-top: 18px; }
+.btn-secondary {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.btn-secondary:hover:not(:disabled) { background: var(--soft); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .hint { margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); }
 

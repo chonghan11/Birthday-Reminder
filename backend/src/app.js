@@ -24,6 +24,10 @@ function createApp({ storage, catalog }) {
     res.status(removed ? 204 : 404).end();
   });
 
+  app.put('/api/timezone', async (req, res) => {
+    res.json(await service.setTimezone(storage, req.body.email, req.body.timezone));
+  });
+
   app.get('/api/gifts', async (req, res) => {
     res.json(await service.searchGifts(catalog, req.query));
   });

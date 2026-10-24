@@ -8,6 +8,7 @@
 //   listByMonthDay(md)     all birthdays on that month-day, e.g. "1005" (the hourly job uses this)
 //   delete(id)             true if something was deleted
 //   markSent(id, key)      remember that reminder `key` (e.g. "2026:3") was emailed
+//   setTimezone(id, tz)    change only the time zone of one birthday (leaves `sent` alone)
 function createMemoryStorage() {
   const items = new Map();
   const copy = (item) => structuredClone(item);
@@ -32,6 +33,10 @@ function createMemoryStorage() {
     async markSent(id, key) {
       const item = items.get(id);
       if (item && !item.sent.includes(key)) item.sent.push(key);
+    },
+    async setTimezone(id, timezone) {
+      const item = items.get(id);
+      if (item) item.timezone = timezone;
     },
   };
 }

@@ -77,6 +77,25 @@ function createdb()
         if (err.name !== 'ConditionalCheckFailedException') throw err;
           }
     },
+
+    // Changes only the time zone, so the `sent` list that the hourly job maintains is never overwritten.
+    async setTimezone(id, timezone) {
+      try {
+        await client.send(
+          new UpdateCommand({
+            TableName,
+            Key: { id },
+            // "timezone" is a reserved word in DynamoDB, so it goes through a name placeholder.
+            UpdateExpression: 'SET #timezone = :timezone',
+            ConditionExpression: 'attribute_exists(id)',
+            ExpressionAttributeNames: { '#timezone': 'timezone' },
+            ExpressionAttributeValues: { ':timezone': timezone },
+          })
+        );
+      } catch (err) {
+        if (err.name !== 'ConditionalCheckFailedException') throw err;
+      }
+    },
     };
 }
 module.exports = createdb;
