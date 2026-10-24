@@ -41,6 +41,8 @@ jobs:
       - name: Build the stack (cdk synth)
         run: npx cdk synth --quiet
         working-directory: cdk
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
 
   deploy:
     name: Deploy to AWS
@@ -76,9 +78,13 @@ jobs:
       - name: Preview the changes (cdk diff)
         run: npx cdk diff CdkStack
         working-directory: cdk
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
 
       # Nobody can answer the approval prompt in CI, so it is switched off. That is acceptable here because only
       # main deploys, and the role can do nothing but run CDK in this one account.
       - name: Deploy (cdk deploy)
         run: npx cdk deploy CdkStack --require-approval never
         working-directory: cdk
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}

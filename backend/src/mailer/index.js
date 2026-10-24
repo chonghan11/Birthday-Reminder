@@ -2,6 +2,7 @@ const config = require('../config');
 
 const backends = {
   console: () => require('./console'),
+  ses: () => require('./ses'),
 };
 
 function createMailer() {

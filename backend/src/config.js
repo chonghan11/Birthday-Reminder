@@ -11,4 +11,6 @@ module.exports = {
   sendFromHour: Number.isInteger(sendFromHour) && sendFromHour >= 0 && sendFromHour <= 23 ? sendFromHour : 7,
   awsRegion: process.env.AWS_REGION || 'ap-southeast-1',
   TableName: process.env.TABLE_NAME || '',
+  // The "from" address for real emails. It must be verified in SES.
+  senderEmail: process.env.SENDER_EMAIL || '',
 };

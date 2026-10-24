@@ -8,6 +8,7 @@ import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations
 import * as path from 'node:path';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -31,6 +32,9 @@ export class CdkStack extends cdk.Stack {
       });
     new cdk.CfnOutput(this, 'TableName', { value: table.tableName });
 
+    const senderEmail = process.env.SENDER_EMAIL;
+    if (!senderEmail) throw new Error('Set SENDER_EMAIL before running cdk');
+
     const fn = new lambda.Function(this, 'birthdayadd', {
       runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'lambda/api.handler',
@@ -39,6 +43,8 @@ export class CdkStack extends cdk.Stack {
       environment:{
         STORAGE_BACKEND: 'dynamodb',
         TABLE_NAME: table.tableName,
+        MAILER_BACKEND: 'ses',
+        SENDER_EMAIL: senderEmail,
       }
     });
     table.grantReadWriteData(fn);
@@ -79,10 +85,15 @@ const Reminderfn = new lambda.Function(this, 'Remindercall', {
       },
     });
      table.grantReadWriteData(Reminderfn);
+     Reminderfn.addToRolePolicy(new iam.PolicyStatement({
+     actions: ['ses:SendEmail'],
+     resources: [`arn:aws:ses:${this.region}:${this.account}:identity/${senderEmail}`],
+     }));
 
   new events.Rule(this, 'HourlyReminderRule', {
   schedule: events.Schedule.rate(cdk.Duration.hours(1)),
   targets: [new targets.LambdaFunction(Reminderfn)],
 });
+
   }}
 
