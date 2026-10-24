@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="716" viewBox="0 0 1120 716" font-family="Segoe UI, system-ui, -apple-system, Roboto, Arial, sans-serif" role="img" aria-label="Architecture of Birthday Buddy on AWS">
+  <title>Birthday Buddy on AWS</title>
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect x="0.5" y="0.5" width="1119" height="715" rx="14" fill="#ffffff" stroke="#dbe6f7"/>
+  <text x="30" y="34" font-size="22" font-weight="700" fill="#14213d">Birthday Buddy on AWS</text>
+  <text x="30" y="54" font-size="12.5" fill="#475569">Serverless: you pay per use, so the running cost stays very low</text>
+  <rect x="30" y="70" width="170" height="66" rx="10" fill="#eef2f6" stroke="#64748b" stroke-width="2"/>
+  <text x="115" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">GitHub Actions</text>
+  <text x="115" y="118" text-anchor="middle" font-size="11.5" fill="#475569">checks, then deploys</text>
+  <rect x="250" y="70" width="170" height="66" rx="10" fill="#eef2f6" stroke="#64748b" stroke-width="2"/>
+  <text x="335" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">CDK + CloudFormation</text>
+  <text x="335" y="118" text-anchor="middle" font-size="11.5" fill="#475569">builds every box here</text>
+  <rect x="470" y="70" width="170" height="66" rx="10" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+  <text x="555" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">EventBridge</text>
+  <text x="555" y="118" text-anchor="middle" font-size="11.5" fill="#475569">runs every hour</text>
+  <rect x="690" y="70" width="170" height="66" rx="10" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+  <text x="775" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Lambda: reminders</text>
+  <text x="775" y="118" text-anchor="middle" font-size="11.5" fill="#475569">finds who is due</text>
+  <rect x="910" y="70" width="170" height="66" rx="10" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+  <text x="995" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Amazon SES</text>
+  <text x="995" y="118" text-anchor="middle" font-size="11.5" fill="#475569">sends the email</text>
+  <rect x="470" y="210" width="170" height="66" rx="10" fill="#e8f0ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="555" y="238" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Amazon S3</text>
+  <text x="555" y="258" text-anchor="middle" font-size="11.5" fill="#475569">private website files</text>
+  <rect x="30" y="350" width="170" height="66" rx="10" fill="#e8f0ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="115" y="378" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Browser</text>
+  <text x="115" y="398" text-anchor="middle" font-size="11.5" fill="#475569">sign up, log in, use it</text>
+  <rect x="250" y="350" width="170" height="66" rx="10" fill="#e8f0ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="335" y="378" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">CloudFront</text>
+  <text x="335" y="398" text-anchor="middle" font-size="11.5" fill="#475569">one HTTPS address</text>
+  <rect x="470" y="350" width="170" height="66" rx="10" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+  <text x="555" y="378" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">API Gateway</text>
+  <text x="555" y="398" text-anchor="middle" font-size="11.5" fill="#475569">rate limit + login check</text>
+  <rect x="690" y="350" width="170" height="66" rx="10" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+  <text x="775" y="378" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Lambda: API</text>
+  <text x="775" y="398" text-anchor="middle" font-size="11.5" fill="#475569">saves and lists birthdays</text>
+  <rect x="910" y="350" width="170" height="66" rx="10" fill="#e6f6ec" stroke="#16a34a" stroke-width="2"/>
+  <text x="995" y="378" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">DynamoDB</text>
+  <text x="995" y="398" text-anchor="middle" font-size="11.5" fill="#475569">the birthdays</text>
+  <rect x="470" y="490" width="170" height="66" rx="10" fill="#f2ebff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="555" y="518" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Amazon Cognito</text>
+  <text x="555" y="538" text-anchor="middle" font-size="11.5" fill="#475569">accounts and login tokens</text>
+  <rect x="690" y="490" width="170" height="66" rx="10" fill="#f2ebff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="775" y="518" text-anchor="middle" font-size="14" font-weight="700" fill="#14213d">Lambda: sign-up guard</text>
+  <text x="775" y="538" text-anchor="middle" font-size="11.5" fill="#475569">stops bots and fake emails</text>
+  <polyline points="200,103 250,103" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="225" y="95" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">OIDC</text>
+  <polyline points="640,103 690,103" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="665" y="95" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">hourly</text>
+  <polyline points="860,103 910,103" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="885" y="95" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">email</text>
+  <polyline points="775,136 775,250 995,250 995,350" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="885" y="243" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">who is due?</text>
+  <polyline points="200,383 250,383" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="225" y="375" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">HTTPS</text>
+  <polyline points="335,350 335,243 470,243" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="400" y="235" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">page files</text>
+  <polyline points="420,383 470,383" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="445" y="375" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">/api/*</text>
+  <polyline points="640,383 690,383" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <polyline points="860,383 910,383" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <polyline points="115,416 115,523 470,523" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <text x="290" y="515" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">sign up / log in</text>
+  <polyline points="555,416 555,490" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#head)"/>
+  <text x="563" y="462" text-anchor="start" font-size="11.5" font-style="italic" fill="#334155">checks the login token</text>
+  <polyline points="640,523 690,523" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#head)"/>
+  <polyline points="860,523 995,523 995,416" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#head)"/>
+  <text x="927.5" y="515" text-anchor="middle" font-size="11.5" font-style="italic" fill="#334155">counts attempts</text>
+  <rect x="30" y="600" width="1050" height="44" rx="10" fill="#eef2f6" stroke="#64748b" stroke-width="2"/>
+  <text x="555" y="627" text-anchor="middle" font-size="12.5" fill="#14213d"><tspan font-weight="700">Safeguards:</tspan> API rate limit  ·  sign-up guard (20 attempts an hour)  ·  30-day log retention  ·  $5 monthly budget alarm</text>
+  <rect x="30" y="672" width="14" height="14" rx="3" fill="#e8f0ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="52" y="684" font-size="12" fill="#334155">Website</text>
+  <rect x="118" y="672" width="14" height="14" rx="3" fill="#fff3e0" stroke="#d97706" stroke-width="2"/>
+  <text x="140" y="684" font-size="12" fill="#334155">Compute</text>
+  <rect x="206" y="672" width="14" height="14" rx="3" fill="#e6f6ec" stroke="#16a34a" stroke-width="2"/>
+  <text x="228" y="684" font-size="12" fill="#334155">Data</text>
+  <rect x="276" y="672" width="14" height="14" rx="3" fill="#f2ebff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="298" y="684" font-size="12" fill="#334155">Login and security</text>
+  <rect x="430" y="672" width="14" height="14" rx="3" fill="#eef2f6" stroke="#64748b" stroke-width="2"/>
+  <text x="452" y="684" font-size="12" fill="#334155">Deploy and safeguards</text>
+  <text x="1080" y="684" text-anchor="end" font-size="12" fill="#334155">Dashed = login and sign-up checks</text>
+</svg>
