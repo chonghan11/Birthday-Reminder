@@ -33,7 +33,6 @@ export class CdkStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'TableName', { value: table.tableName });
 
     const senderEmail = process.env.SENDER_EMAIL;
-    if (!senderEmail) throw new Error('Set SENDER_EMAIL before running cdk');
 
     const fn = new lambda.Function(this, 'birthdayadd', {
       runtime: lambda.Runtime.NODEJS_LATEST,
@@ -43,8 +42,6 @@ export class CdkStack extends cdk.Stack {
       environment:{
         STORAGE_BACKEND: 'dynamodb',
         TABLE_NAME: table.tableName,
-        MAILER_BACKEND: 'ses',
-        SENDER_EMAIL: senderEmail,
       }
     });
     table.grantReadWriteData(fn);
@@ -81,15 +78,17 @@ const Reminderfn = new lambda.Function(this, 'Remindercall', {
       environment:{
         STORAGE_BACKEND: 'dynamodb',
         TABLE_NAME: table.tableName,
-        MAILER_BACKEND:'console',
+        MAILER_BACKEND: senderEmail ? 'ses' : 'console',
+        SENDER_EMAIL: senderEmail ?? '',
       },
     });
      table.grantReadWriteData(Reminderfn);
+     if (senderEmail) {
      Reminderfn.addToRolePolicy(new iam.PolicyStatement({
      actions: ['ses:SendEmail'],
      resources: [`arn:aws:ses:${this.region}:${this.account}:identity/${senderEmail}`],
-     }));
-
+  }));
+}
   new events.Rule(this, 'HourlyReminderRule', {
   schedule: events.Schedule.rate(cdk.Duration.hours(1)),
   targets: [new targets.LambdaFunction(Reminderfn)],
