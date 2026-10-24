@@ -9,6 +9,10 @@ import * as path from 'node:path';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -69,6 +73,30 @@ api.addRoutes({
   integration: integration,
 });
 new cdk.CfnOutput(this,'ApiUrl',{value: api.apiEndpoint});
+
+const bucket = new s3.Bucket(this, 'SiteBucket', {
+  blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+  removalPolicy: RemovalPolicy.DESTROY,
+  autoDeleteObjects: true,
+  enforceSSL: true,
+ })
+
+const distribution = new cloudfront.Distribution(this, 'SiteCdn', {
+  defaultRootObject: 'index.html',
+  defaultBehavior: { origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
+  viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS },
+  additionalBehaviors: { '/api/*': {
+    originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+    origin: new origins.HttpOrigin(`${api.apiId}.execute-api.${this.region}.${this.urlSuffix}`),
+    allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+    cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+    viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+  } },  
+ })
+new s3deploy.BucketDeployment(this, 'DeploySite', { sources: [s3deploy.Source.asset(path.join(__dirname, '../../frontend'))],
+destinationBucket: bucket, distribution, distributionPaths: ['/*'] })
+
+new cdk.CfnOutput(this, 'SiteUrl', { value: `https://${distribution.distributionDomainName}` });
 
 const Reminderfn = new lambda.Function(this, 'Remindercall', {
       runtime: lambda.Runtime.NODEJS_LATEST,
